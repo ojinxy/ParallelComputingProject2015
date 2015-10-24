@@ -3,20 +3,28 @@
 	Author: PracsPedia		www.pracspedia.com
 */
 #include<stdio.h>
+#include<stdlib.h>
+#include <time.h> 
 //#include<conio.h>
 int a[10][10],visited[10],n,cost=0;
 
 void get()
-{
+{	
+	
 	int i,j;
-	printf("Enter No. of Cities: ");
-	scanf("%d",&n);
-	printf("\nEnter Cost Matrix\n");
+	//printf("Enter No. of Cities: ");
+	//scanf("%d",&n);
+	n = 35;
+	printf("No. of Cities travelling salesman program is %d: ",n);
+	//printf("\nEnter Cost Matrix\n");
+	printf("\nRandomizing Cost Matrix\n");
 	for( i=0;i < n;i++)
 	{
-		printf("\nEnter Elements of Row # : %d\n",i+1);
+		//printf("\nEnter Elements of Row # : %d\n",i+1);
+		/*Code added by OA 23 Oct 2015 - Use random numbers to generate distance between points.*/
 		for( j=0;j < n;j++)
-			scanf("%d",&a[i][j]);
+			a[i][j] = randInRange(1,100);
+			//scanf("%d",&a[i][j]);
 		visited[i]=0;
 	}
 	printf("\n\nThe cost list is:\n\n");
@@ -77,6 +85,35 @@ void main()
 	mincost(0);
 	put();
 	//getch();
+}
+
+int randInRange(int min, int max)
+{
+  srand(rand());
+  int returnValue = min + (int) (rand() / (double) (RAND_MAX -1) * (max - min + 1));
+  srand (returnValue + time(NULL));
+  return returnValue;
+}
+
+/* Returns an integer in the range [0, n).
+ *
+ * Uses rand(), and so is affected-by/affects the same seed.
+ */
+int randint(int n) {
+  if ((n - 1) == RAND_MAX) {
+    return rand();
+  } else {
+    // Chop off all of the values that would cause skew...
+    long end = RAND_MAX / n; // truncate skew
+
+    // ... and ignore results from rand() that fall above that limit.
+    // (Worst case the loop condition should succeed 50% of the time,
+    // so we can expect to bail out of this loop pretty quickly.)
+    int r;
+    while ((r = rand()) >= end);
+
+    return r % n;
+  }
 }
 
 /*
