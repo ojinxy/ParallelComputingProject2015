@@ -2,9 +2,34 @@
 	C Program for Travelling Salesman Problem using Dynamic Method
 	Author: PracsPedia		www.pracspedia.com
 */
+/*
+* The proposed solution is to decompose the data based on the least portion of the code which has the loop.
+*int least(int c)
+*{
+*	int i,nc=999;
+*	int min=999,kmin;
+*	for(i=0;i < n;i++)
+*	{
+*		if((a[c][i]!=0)&&(visited[i]==0))
+*			if(a[c][i] < min)
+*			{
+*				min=a[i][0]+a[c][i];
+*				kmin=a[c][i];
+*				nc=i;
+*			}
+*	}
+*	if(min!=999)
+*		cost+=kmin;
+*	return nc;
+*}
+* If we are able to split this work amoungest the amout of processors the the work should be faster. The least value can be
+*broadcast to the master node to maintain the minimum value. When one city has finished the next city can be processed and parallize the least function
+*again.
+*/
 #include<stdio.h>
 #include<stdlib.h>
 #include <time.h> 
+#define SLAVENAME "slave1"
 //#include<conio.h>
 int a[10][10],visited[10],n,cost=0;
 
