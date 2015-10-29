@@ -30,26 +30,24 @@
 #include<stdlib.h>
 #include <time.h> 
 #include "pvm3.h"
-#define SLAVENAME "slave1"
-//#include<conio.h>
-int a[10][10],visited[10],n,cost=0;
+#define LEAST "tspleast"
+
+int a[25][25],visited[25],n,cost=0;
 
 void get()
 {	
 	
 	int i,j;
-	//printf("Enter No. of Cities: ");
-	//scanf("%d",&n);
-	n = 35;
+	n = 25;
 	printf("No. of Cities travelling salesman program is %d: ",n);
-	//printf("\nEnter Cost Matrix\n");
+
 	printf("\nRandomizing Cost Matrix\n");
 	for( i=0;i < n;i++)
 	{
 		//printf("\nEnter Elements of Row # : %d\n",i+1);
 		/*Code added by OA 23 Oct 2015 - Use random numbers to generate distance between points.*/
 		for( j=0;j < n;j++)
-			a[i][j] = randInRange(1,100);
+			a[i][j] = randInRange(1, 100) + i + j;
 			//scanf("%d",&a[i][j]);
 		visited[i]=0;
 	}
@@ -64,20 +62,8 @@ void get()
 
 void mincost(int city)
 {
-	int mytid;                  /* my task id */
-	int tids[32];		   /* slave task ids */
-    	mytid = pvm_mytid();	  /* enroll in pvm */
-	int nhost, narch;
-
-	struct pvmhostinfo *hostp;
-
-	/* Set number of slaves to start */
-    	pvm_config( &nhost, &narch, &hostp );
     	
-    	
-	printf("Number of hosts available %d." , nhost);
-
-	int i,ncity;
+    	int i,ncity;
 	visited[city]=1;	
 	printf("%d -->",city+1);
 	ncity=least(city);
@@ -118,25 +104,39 @@ void put()
 
 void main()
 {
-int mytid;                  /* my task id */
+	printf("I'm t%x\n", pvm_mytid());
+	
+	
+	int tid,cc;                  /* my task id */
 	int tids[32];		   /* slave task ids */
-    	mytid = pvm_mytid();	  /* enroll in pvm */
+    	tid = pvm_mytid();	  /* enroll in pvm */
 	int nhost, narch;
+	char buf[100];
 
 	struct pvmhostinfo *hostp;
 
 	/* Set number of slaves to start */
     	pvm_config( &nhost, &narch, &hostp );
+
+	printf("Number of hosts available %d." , nhost);
     	
+	cc = pvm_spawn(LEAST, (char**)0, 0, "", 1, &tid);
+
+	if (cc == 1) {
+		cc = pvm_recv(-1, -1);
+		pvm_bufinfo(cc, (int*)0, (int*)0, &tid);
+		pvm_upkstr(buf);
+		printf("from t%x: %s\n", tid, buf);
+
+	} else
+		printf("can't start least\n");
     	
 	printf("Number of hosts available %d." , nhost);
 	
-	//clrscr();
 	get();
 	printf("\n\nThe Path is:\n\n");
 	mincost(0);
 	put();
-	//getch();
 }
 
 int randInRange(int min, int max)
@@ -147,26 +147,6 @@ int randInRange(int min, int max)
   return returnValue;
 }
 
-/* Returns an integer in the range [0, n).
- *
- * Uses rand(), and so is affected-by/affects the same seed.
- */
-int randint(int n) {
-  if ((n - 1) == RAND_MAX) {
-    return rand();
-  } else {
-    // Chop off all of the values that would cause skew...
-    long end = RAND_MAX / n; // truncate skew
-
-    // ... and ignore results from rand() that fall above that limit.
-    // (Worst case the loop condition should succeed 50% of the time,
-    // so we can expect to bail out of this loop pretty quickly.)
-    int r;
-    while ((r = rand()) >= end);
-
-    return r % n;
-  }
-}
 
 /*
 
