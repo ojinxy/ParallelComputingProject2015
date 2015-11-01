@@ -31,14 +31,22 @@
 #include <time.h> 
 #include "pvm3.h"
 #define LEAST "tspleast"
+#define AMOUNTOFCITYS 3
+#define MSGTYPE 55
+#define MSGTYPEFROMSLAVE 56
+#define VISITEDNODES 57
+#define PROCESSINGNODES 58
 
-int a[25][25],visited[25],n,cost=0;
+//int AMOUNTOFCITYS = 3;
+int a[AMOUNTOFCITYS][AMOUNTOFCITYS],visited[AMOUNTOFCITYS],n,cost=0,city=0,cityXaxis[AMOUNTOFCITYS],
+	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],processing[AMOUNTOFCITYS];
 
 void get()
 {	
 	
 	int i,j;
-	n = 25;
+	n = AMOUNTOFCITYS;
+	nproc = AMOUNTOFCITYS;
 	printf("No. of Cities travelling salesman program is %d: ",n);
 
 	printf("\nRandomizing Cost Matrix\n");
@@ -60,22 +68,7 @@ void get()
 	}
 }
 
-void mincost(int city)
-{
-    	
-    	int i,ncity;
-	visited[city]=1;	
-	printf("%d -->",city+1);
-	ncity=least(city);
-	if(ncity==999)
-	{
-		ncity=0;
-		printf("%d",ncity+1);
-		cost+=a[city][ncity];
-		return;
-	}
-	mincost(ncity);
-}
+
 
 int least(int c)
 {
@@ -107,8 +100,8 @@ void main()
 	printf("I'm t%x\n", pvm_mytid());
 	
 	
-	int tid,cc;                  /* my task id */
-	int tids[32];		   /* slave task ids */
+	int tid,cc;                 /* my task id */
+	int tids[AMOUNTOFCITYS];   /* slave task ids */
     	tid = pvm_mytid();	  /* enroll in pvm */
 	int nhost, narch;
 	char buf[100];
@@ -120,24 +113,96 @@ void main()
 
 	printf("Number of hosts available %d." , nhost);
     	
-	cc = pvm_spawn(LEAST, (char**)0, 0, "", 1, &tid);
-
-	if (cc == 1) {
-		cc = pvm_recv(-1, -1);
-		pvm_bufinfo(cc, (int*)0, (int*)0, &tid);
-		pvm_upkstr(buf);
-		printf("from t%x: %s\n", tid, buf);
-
-	} else
-		printf("can't start least\n");
-    	
-	printf("Number of hosts available %d." , nhost);
+	cc = pvm_spawn(LEAST, (char**)0, 0, "", AMOUNTOFCITYS, tids);
 	
 	get();
 	printf("\n\nThe Path is:\n\n");
-	mincost(0);
+
+
+	int i = 0;
+	for(i ;i < AMOUNTOFCITYS; i++){
+		setCityYAxisArray(i);
+		setCityXAxisArray(i);
+		city = i;
+
+		if(i != 0){
+			pvm_recv(tids[i -1],VISITEDNODES);
+			pvm_upkint(visited,AMOUNTOFCITYS,1);
+			pvm_upkint(processing,AMOUNTOFCITYS,1);
+			int m = 0;
+			printf("The visited nodes for parent are ");
+			for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,visited[m] );}
+			printf("\n");
+
+			pvm_recv(tids[i -1],PROCESSINGNODES);
+			pvm_upkint(processing,AMOUNTOFCITYS,1);
+			int z = 0;
+			printf("\nThe nodes being processed in parent are : ");
+			for(z; z < AMOUNTOFCITYS; z ++){printf("%d --> %d |",z,processing[z] );}
+			printf("\n");
+			
+		}		
+
+		printf("\nValue of city in the parent is %d\n",city);
+	
+		pvm_initsend(PvmDataDefault);
+
+		pvm_pkint(cityYaxis,AMOUNTOFCITYS , 1);
+		int x = 0;
+		printf("City Y Axis in parent consists of  : ");
+		for(x; x < AMOUNTOFCITYS; x++){printf("%d-->",cityYaxis[x]);}
+		printf("\n");
+		pvm_pkint(cityXaxis,AMOUNTOFCITYS , 1);
+		printf("City X Axis in parent consists of  : ");
+		int xIndex = 0;
+		for(xIndex; xIndex < AMOUNTOFCITYS; xIndex++){printf("%d-->",cityXaxis[xIndex]);}
+		printf("\n");
+
+		pvm_pkint(cityYaxisFirstCity,AMOUNTOFCITYS , 1);
+		printf("First City Y Axis in parent consists of  : ");
+		int xFIndex = 0;
+		for(xFIndex; xFIndex < AMOUNTOFCITYS; xFIndex++){printf("%d-->",cityYaxisFirstCity[xFIndex]);}
+		printf("\n");
+
+		pvm_pkint(&city,1 , 1);
+
+		processing[i] = 1;
+
+		pvm_send(tids[i],MSGTYPE);
+
+		
+		if(i != 0){
+			pvm_initsend(PvmDataDefault);
+			pvm_pkint(visited,AMOUNTOFCITYS,1);
+			pvm_send(tids[i],VISITEDNODES);
+			
+			pvm_initsend(PvmDataDefault);
+			pvm_pkint(visited,AMOUNTOFCITYS,1);
+			pvm_send(tids[i],PROCESSINGNODES);
+		}
+		
+		
+	}
+
+	/*Evaluate costs from slaves.*/
+	int costFromSlave = 0;
+	int cityFromSlave = 0;
+	printf("%d-->",1);
+	for(i =0; i < AMOUNTOFCITYS; i ++){
+		pvm_recv(tids[i],MSGTYPEFROMSLAVE);
+		pvm_upkint(&costFromSlave,1,1);
+		pvm_upkint(&cityFromSlave,1,1);
+		if(i != (AMOUNTOFCITYS -1)){
+		printf("%d-->",cityFromSlave);
+		}else{printf("%d",1);}
+		cost += costFromSlave;
+	}
+
 	put();
+	pvm_exit();
 }
+
+
 
 int randInRange(int min, int max)
 {
@@ -147,6 +212,23 @@ int randInRange(int min, int max)
   return returnValue;
 }
 
+setCityYAxisArray(int city){
+  int indexYAxis = 0;
+  for(indexYAxis; indexYAxis < AMOUNTOFCITYS; indexYAxis++){
+	cityYaxis[indexYAxis] = a[indexYAxis][city];
+	if(city == 0){
+	   cityYaxisFirstCity[indexYAxis] = a[indexYAxis][city];	
+	}
+  }
+  
+}
+
+setCityXAxisArray(int city){
+  int i = 0;
+  for(i; i < AMOUNTOFCITYS; i++){
+	cityXaxis[i] = a[city][i];
+  }
+}
 
 /*
 

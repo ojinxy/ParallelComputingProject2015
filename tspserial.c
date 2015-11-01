@@ -39,7 +39,7 @@ void get()
 	int i,j;
 	//printf("Enter No. of Cities: ");
 	//scanf("%d",&n);
-	n = 35;
+	n = 3;
 	printf("No. of Cities travelling salesman program is %d: ",n);
 	//printf("\nEnter Cost Matrix\n");
 	printf("\nRandomizing Cost Matrix\n");
