@@ -31,7 +31,7 @@
 #include <time.h> 
 #include "pvm3.h"
 #define LEAST "tspleast"
-#define AMOUNTOFCITYS 3
+#define AMOUNTOFCITYS 5
 #define MSGTYPE 55
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
@@ -39,7 +39,8 @@
 
 //int AMOUNTOFCITYS = 3;
 int a[AMOUNTOFCITYS][AMOUNTOFCITYS],visited[AMOUNTOFCITYS],n,cost=0,city=0,cityXaxis[AMOUNTOFCITYS],
-	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],processing[AMOUNTOFCITYS];
+	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],processing[AMOUNTOFCITYS],
+	lastVisited,cityIndex;
 
 void get()
 {	
@@ -68,26 +69,6 @@ void get()
 	}
 }
 
-
-
-int least(int c)
-{
-	int i,nc=999;
-	int min=999,kmin;
-	for(i=0;i < n;i++)
-	{
-		if((a[c][i]!=0)&&(visited[i]==0))
-			if(a[c][i] < min)
-			{
-				min=a[i][0]+a[c][i];
-				kmin=a[c][i];
-				nc=i;
-			}
-	}
-	if(min!=999)
-		cost+=kmin;
-	return nc;
-}
 
 void put()
 {
@@ -118,53 +99,63 @@ void main()
 	get();
 	printf("\n\nThe Path is:\n\n");
 
-
+	lastVisited = -1;
 	int i = 0;
 	for(i ;i < AMOUNTOFCITYS; i++){
-		setCityYAxisArray(i);
-		setCityXAxisArray(i);
 		city = i;
-
+		cityIndex = i;
 		if(i != 0){
 			pvm_recv(tids[i -1],VISITEDNODES);
 			pvm_upkint(visited,AMOUNTOFCITYS,1);
-			pvm_upkint(processing,AMOUNTOFCITYS,1);
-			int m = 0;
-			printf("The visited nodes for parent are ");
-			for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,visited[m] );}
-			printf("\n");
+			pvm_upkint(&lastVisited,1,1);
+			
+			if(lastVisited > 0){city = lastVisited;}
+			
+			
+			//int m = 0;
+			//printf("The visited nodes for parent are ");
+			//for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,visited[m] );}
+			//printf("\n");
+			//printf("\nThe last visited node from parent is %d\n",lastVisited);
 
 			pvm_recv(tids[i -1],PROCESSINGNODES);
-			pvm_upkint(processing,AMOUNTOFCITYS,1);
-			int z = 0;
+			//pvm_upkint(processing,AMOUNTOFCITYS,1);
+			/*int z = 0;
 			printf("\nThe nodes being processed in parent are : ");
 			for(z; z < AMOUNTOFCITYS; z ++){printf("%d --> %d |",z,processing[z] );}
-			printf("\n");
+			printf("\n");*/
 			
-		}		
+		}
 
-		printf("\nValue of city in the parent is %d\n",city);
+		setCityYAxisArray(city);
+		setCityXAxisArray(city);		
+
+		//printf("\nValue of city in the parent is %d\n",city);
 	
 		pvm_initsend(PvmDataDefault);
 
 		pvm_pkint(cityYaxis,AMOUNTOFCITYS , 1);
-		int x = 0;
+		/*int x = 0;
 		printf("City Y Axis in parent consists of  : ");
 		for(x; x < AMOUNTOFCITYS; x++){printf("%d-->",cityYaxis[x]);}
-		printf("\n");
+		printf("\n");*/
 		pvm_pkint(cityXaxis,AMOUNTOFCITYS , 1);
-		printf("City X Axis in parent consists of  : ");
+		/*printf("City X Axis in parent consists of  : ");
 		int xIndex = 0;
 		for(xIndex; xIndex < AMOUNTOFCITYS; xIndex++){printf("%d-->",cityXaxis[xIndex]);}
-		printf("\n");
+		printf("\n");*/
 
 		pvm_pkint(cityYaxisFirstCity,AMOUNTOFCITYS , 1);
-		printf("First City Y Axis in parent consists of  : ");
+		/*printf("First City Y Axis in parent consists of  : ");
 		int xFIndex = 0;
 		for(xFIndex; xFIndex < AMOUNTOFCITYS; xFIndex++){printf("%d-->",cityYaxisFirstCity[xFIndex]);}
-		printf("\n");
+		printf("\n");*/
 
 		pvm_pkint(&city,1 , 1);
+
+		pvm_pkint(&lastVisited,1,1);
+
+		pvm_pkint(&cityIndex,1,1);
 
 		processing[i] = 1;
 
@@ -177,7 +168,7 @@ void main()
 			pvm_send(tids[i],VISITEDNODES);
 			
 			pvm_initsend(PvmDataDefault);
-			pvm_pkint(visited,AMOUNTOFCITYS,1);
+			pvm_pkint(processing,AMOUNTOFCITYS,1);
 			pvm_send(tids[i],PROCESSINGNODES);
 		}
 		
