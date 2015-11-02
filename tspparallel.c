@@ -3,25 +3,6 @@
 	Author: PracsPedia		www.pracspedia.com
 */
 /*
-* The proposed solution is to decompose the data based on the least portion of the code which has the loop.
-*int least(int c)
-*{
-*	int i,nc=999;
-*	int min=999,kmin;
-*	for(i=0;i < n;i++)
-*	{
-*		if((a[c][i]!=0)&&(visited[i]==0))
-*			if(a[c][i] < min)
-*			{
-*				min=a[i][0]+a[c][i];
-*				kmin=a[c][i];
-*				nc=i;
-*			}
-*	}
-*	if(min!=999)
-*		cost+=kmin;
-*	return nc;
-*}
 * If we are able to split this work amoungest the amout of processors the the work should be faster. The least value can be
 *broadcast to the master node to maintain the minimum value. When one city has finished the next city can be processed and parallize the least function
 *again.
@@ -31,16 +12,16 @@
 #include <time.h> 
 #include "pvm3.h"
 #define LEAST "tspleast"
-#define AMOUNTOFCITYS 5
+#define AMOUNTOFCITYS 20
 #define MSGTYPE 55
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
-#define PROCESSINGNODES 58
+
 
 //int AMOUNTOFCITYS = 3;
 int a[AMOUNTOFCITYS][AMOUNTOFCITYS],visited[AMOUNTOFCITYS],n,cost=0,city=0,cityXaxis[AMOUNTOFCITYS],
-	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],processing[AMOUNTOFCITYS],
-	lastVisited,cityIndex;
+	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],
+	lastVisited,cityIndex,lastVisitedNodes[AMOUNTOFCITYS];
 
 void get()
 {	
@@ -101,6 +82,7 @@ void main()
 
 	lastVisited = -1;
 	int i = 0;
+	lastVisitedNodes[0] = 1;
 	for(i ;i < AMOUNTOFCITYS; i++){
 		city = i;
 		cityIndex = i;
@@ -108,22 +90,10 @@ void main()
 			pvm_recv(tids[i -1],VISITEDNODES);
 			pvm_upkint(visited,AMOUNTOFCITYS,1);
 			pvm_upkint(&lastVisited,1,1);
-			
+			pvm_upkint(lastVisitedNodes,AMOUNTOFCITYS,1);
+
 			if(lastVisited > 0){city = lastVisited;}
 			
-			
-			//int m = 0;
-			//printf("The visited nodes for parent are ");
-			//for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,visited[m] );}
-			//printf("\n");
-			//printf("\nThe last visited node from parent is %d\n",lastVisited);
-
-			pvm_recv(tids[i -1],PROCESSINGNODES);
-			//pvm_upkint(processing,AMOUNTOFCITYS,1);
-			/*int z = 0;
-			printf("\nThe nodes being processed in parent are : ");
-			for(z; z < AMOUNTOFCITYS; z ++){printf("%d --> %d |",z,processing[z] );}
-			printf("\n");*/
 			
 		}
 
@@ -155,9 +125,10 @@ void main()
 
 		pvm_pkint(&lastVisited,1,1);
 
+		pvm_pkint(lastVisitedNodes,AMOUNTOFCITYS,1);
+
 		pvm_pkint(&cityIndex,1,1);
 
-		processing[i] = 1;
 
 		pvm_send(tids[i],MSGTYPE);
 
@@ -167,9 +138,6 @@ void main()
 			pvm_pkint(visited,AMOUNTOFCITYS,1);
 			pvm_send(tids[i],VISITEDNODES);
 			
-			pvm_initsend(PvmDataDefault);
-			pvm_pkint(processing,AMOUNTOFCITYS,1);
-			pvm_send(tids[i],PROCESSINGNODES);
 		}
 		
 		

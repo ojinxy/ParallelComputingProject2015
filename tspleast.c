@@ -14,15 +14,14 @@ static char rcsid[] =
 #include <strings.h>
 #endif
 #include "pvm3.h"
-#define AMOUNTOFCITYS 5
+#define AMOUNTOFCITYS 20
 #define MSGTYPE 55
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
-#define PROCESSINGNODES 58
 
 //int AMOUNTOFCITYS = 3;
 int visited[AMOUNTOFCITYS],cost=0,cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],cityXaxis[AMOUNTOFCITYS],city=0,
-	solution[AMOUNTOFCITYS],parentTid,tids[AMOUNTOFCITYS],processing[AMOUNTOFCITYS],lastVisited,cityIndex;
+	solution[AMOUNTOFCITYS],parentTid,tids[AMOUNTOFCITYS],lastVisited,cityIndex,lastVisitedNodes[AMOUNTOFCITYS];
 
 main()
 {
@@ -55,7 +54,13 @@ main()
 	pvm_upkint(&city,1,1);
 
 	pvm_upkint(&lastVisited,1,1);
+	pvm_upkint(lastVisitedNodes,AMOUNTOFCITYS,1);
 	pvm_upkint(&cityIndex,1,1);
+
+	int m = 0;
+	/*printf("\nThe visited nodes are : ");
+	for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,lastVisitedNodes[m] );}
+	printf("\n");*/
 	//printf("\nThe last visited node from child is %d\n",lastVisited);
 
 	//int z = 0;
@@ -81,9 +86,6 @@ mincost(int city)
 		pvm_recv(parentTid,VISITEDNODES);
 		pvm_upkint(visited,AMOUNTOFCITYS,1);
 
-		//printf("Unpacking Processed Nodes!\n");
-		pvm_recv(parentTid,PROCESSINGNODES);
-		pvm_upkint(processing,AMOUNTOFCITYS,1);
 	}
 		
 	visited[city]=1;
@@ -103,22 +105,20 @@ mincost(int city)
 	if(ncity==999)
 	{
 		ncity=0;
-		printf("finished");
+		//printf("finished");
 		cost+= cityYaxis[ncity];
 		//return;
 	}
 	//mincost(ncity);
 	
 	lastVisited = ncity;
+	lastVisitedNodes[lastVisited] = 1;
 	pvm_initsend(PvmDataDefault);
 	pvm_pkint(visited,AMOUNTOFCITYS,1);
 	pvm_pkint(&lastVisited,1,1);
+	pvm_pkint(lastVisitedNodes,AMOUNTOFCITYS,1);
 	pvm_send(parentTid,VISITEDNODES);
 
-	pvm_initsend(PvmDataDefault);
-	processing[city] = 0;
-	pvm_pkint(processing,AMOUNTOFCITYS,1);
-	pvm_send(parentTid,PROCESSINGNODES);
 
 }
 
@@ -139,12 +139,14 @@ int least()
 	}*/
 	for(i=0;i < AMOUNTOFCITYS;i++)
 	{
-		printf("City at y axis %d",cityYaxis[i]);
+		//printf("City at y axis %d",cityYaxis[i]);
 		if((cityXaxis[i]!=0)&&(checkIfCanidateForSelection(i) == 1))
 		{
+			
 			if(cityXaxis[i] < min)
 			{
-				min=cityYaxisFirstCity[i]+cityXaxis[i];
+				//min=cityYaxisFirstCity[i]+cityXaxis[i];
+				min=cityXaxis[i];
 				if(cityIndex < (AMOUNTOFCITYS -1)){
 					kmin=cityXaxis[i];
 				}else{kmin=cityXaxis[0];}
@@ -161,8 +163,8 @@ int least()
 	if(nc != 999){
 		costFromSlave = kmin;
 		cityFromSlave = nc + 1;
-	}else{costFromSlave =0;cityFromSlave=1;}
-	printf("\nCost %d being returned for city %d with city index of %d\n",costFromSlave,cityFromSlave,cityIndex);
+	}else{costFromSlave =cityXaxis[0];cityFromSlave=1;}
+	//printf("\nCost %d being returned for city %d with city index of %d\n",costFromSlave,cityFromSlave,cityIndex);
 	pvm_pkint(&costFromSlave,1,1);
 	pvm_pkint(&cityFromSlave,1,1);
 	pvm_send(parentTid,MSGTYPEFROMSLAVE);
@@ -178,9 +180,10 @@ int checkIfCanidateForSelection(int i){
 	printf("Visted is %d\n",visited[i]);
 	printf("Processing is %d\n",processing[i]);*/
 
+
 	if(visited[i] == 0 && city != i){
 		candidate = 1;
-	} else if(visited[i] == 1 && processing[i] == 1 && city != i && lastVisited != i && lastVisited != -1){
+	} else if(lastVisitedNodes[i] != 1){
 		candidate = 1;
 	}
 
@@ -190,6 +193,6 @@ int checkIfCanidateForSelection(int i){
 	printf("\n");*/
 	
 	/*printf("\nThe city{%d} for index i {%d} had candidate value of {%d}\n",city,i,candidate);*/
-	printf("Candidate for Selection %d\n",candidate);
+	//printf("Candidate for Selection %d\n",candidate);
 	return candidate;
 }
