@@ -11,17 +11,18 @@
 #include<stdlib.h>
 #include <time.h> 
 #include "pvm3.h"
+#include <string.h>
 #define LEAST "tspleast"
-#define AMOUNTOFCITYS 20
+#define AMOUNTOFCITYS 25
 #define MSGTYPE 55
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
 
 
-//int AMOUNTOFCITYS = 3;
 int a[AMOUNTOFCITYS][AMOUNTOFCITYS],visited[AMOUNTOFCITYS],n,cost=0,city=0,cityXaxis[AMOUNTOFCITYS],
 	cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],nproc,solution[AMOUNTOFCITYS],
 	lastVisited,cityIndex,lastVisitedNodes[AMOUNTOFCITYS];
+char citynames[25][50];
 
 void get()
 {	
@@ -59,12 +60,12 @@ void put()
 
 void main()
 {
-	printf("I'm t%x\n", pvm_mytid());
+	//printf("I'm t%x\n", pvm_mytid());
 	
 	
 	int tid,cc;                 /* my task id */
 	int tids[AMOUNTOFCITYS];   /* slave task ids */
-    	tid = pvm_mytid();	  /* enroll in pvm */
+    	//tid = pvm_mytid();	  /* enroll in pvm */
 	int nhost, narch;
 	char buf[100];
 
@@ -77,7 +78,8 @@ void main()
     	
 	cc = pvm_spawn(LEAST, (char**)0, 0, "", AMOUNTOFCITYS, tids);
 	
-	get();
+	//get();
+	readCitys();
 	printf("\n\nThe Path is:\n\n");
 
 	lastVisited = -1;
@@ -146,14 +148,14 @@ void main()
 	/*Evaluate costs from slaves.*/
 	int costFromSlave = 0;
 	int cityFromSlave = 0;
-	printf("%d-->",1);
+	printf("%s-->",citynames[0]);
 	for(i =0; i < AMOUNTOFCITYS; i ++){
 		pvm_recv(tids[i],MSGTYPEFROMSLAVE);
 		pvm_upkint(&costFromSlave,1,1);
 		pvm_upkint(&cityFromSlave,1,1);
 		if(i != (AMOUNTOFCITYS -1)){
-		printf("%d-->",cityFromSlave);
-		}else{printf("%d",1);}
+		printf("%s-->",citynames[cityFromSlave]);
+		}else{printf("%s",citynames[0]);}
 		cost += costFromSlave;
 	}
 
@@ -187,6 +189,53 @@ setCityXAxisArray(int city){
   for(i; i < AMOUNTOFCITYS; i++){
 	cityXaxis[i] = a[city][i];
   }
+}
+
+
+readCitys(){
+	char buf[1024];
+	int lineCount = 0;
+	FILE *file=fopen("/home/oneal/pvm3/bin/LINUX/TSPData.csv","r");
+
+	if(!file){
+		printf("Cannot open file.\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	char * stringToken;
+	while(fgets(buf, sizeof buf,file) != NULL){
+		//printf("\nBUFF %s\n",buf);
+		
+		
+		stringToken = strtok(buf,",");
+		strcpy(citynames[lineCount],stringToken);
+		int cityCount = 0;
+		while(stringToken != NULL){
+			
+			stringToken = strtok(NULL,",");
+			//printf("\nThe token is %s\n",stringToken);
+			if(stringToken != NULL){
+				a[lineCount][cityCount] = atoi(stringToken);
+			}
+			cityCount = cityCount + 1;
+			
+		}
+
+		lineCount = lineCount + 1;
+	
+	}
+
+	//printf("The 23rd city is %d\n",citys[0][11]);
+
+	//printf("The 23rd city name is %s\n",citynames[0]);
+	int i,j;
+	printf("\n\nThe cost list is:\n\n");
+	for( i=0;i < AMOUNTOFCITYS;i++)
+	{
+		printf("\n\n");
+		for(j=0;j < AMOUNTOFCITYS;j++)
+			printf("\t%d",a[i][j]);
+	}
 }
 
 /*

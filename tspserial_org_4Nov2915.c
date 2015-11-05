@@ -29,12 +29,9 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include <time.h> 
-#include <string.h>
 #define SLAVENAME "slave1"
 //#include<conio.h>
 int a[10][10],visited[10],n,cost=0;
-char citynames[25][50];
-int citys[25][25];
 
 void get()
 {	
@@ -107,7 +104,6 @@ void put()
 
 void main()
 {
-	readCitys();
 	//clrscr();
 	get();
 	printf("\n\nThe Path is:\n\n");
@@ -145,44 +141,6 @@ int randint(int n) {
   }
 }
 
-
-readCitys(){
-	char buf[1024];
-	int lineCount = 0;
-	FILE *file=fopen("TSPData.csv","r");
-
-	if(!file){
-		printf("Cannot open file.\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	char * stringToken;
-	while(fgets(buf, sizeof buf,file) != NULL){
-		printf("\nBUFF %s\n",buf);
-		
-		
-		stringToken = strtok(buf,",");
-		strcpy(citynames[lineCount],stringToken);
-		int cityCount = 0;
-		while(stringToken != NULL){
-			
-			stringToken = strtok(NULL,",");
-			//printf("\nThe token is %s\n",stringToken);
-			if(stringToken != NULL){
-				citys[lineCount][cityCount] = atoi(stringToken);
-			}
-			cityCount = cityCount + 1;
-			
-		}
-
-		lineCount = lineCount + 1;
-	
-	}
-
-	//printf("The 23rd city is %d\n",citys[0][11]);
-
-	//printf("The 23rd city name is %s\n",citynames[0]);
-}
 /*
 
 OUTPUT:

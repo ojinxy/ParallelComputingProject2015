@@ -14,7 +14,7 @@ static char rcsid[] =
 #include <strings.h>
 #endif
 #include "pvm3.h"
-#define AMOUNTOFCITYS 20
+#define AMOUNTOFCITYS 25
 #define MSGTYPE 55
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
