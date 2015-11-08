@@ -133,11 +133,10 @@ int getQn(int index){
 		return 0;
 	}
 
-	int value1 = 0;
+	int value1 = 0;		
 	int value2 = 0;
 	int value3 = 0;
 	int value4 = 0;
-
 	if(index == 0){
 		value1 = matrixa[0][0];
 		value2 = matrixb[0][1];
@@ -174,18 +173,14 @@ int getQn(int index){
 		value3 = matrixb[0][0];
 		value4 = matrixb[0][1];
 	}
-
-	/*Send Data to Salve node*/
 	pvm_initsend(PvmDataDefault);
-	
 	pvm_pkint(&value1,1,1);
 	pvm_pkint(&value2,1,1);
 	pvm_pkint(&value3,1,1);
 	pvm_pkint(&value4,1,1);
 	pvm_pkint(&index,1,1);
-
 	pvm_send(tids[index],MESSAGETYPE_CALCUATE);
-	
+		
 	getQn(index + 1);
 
 }
