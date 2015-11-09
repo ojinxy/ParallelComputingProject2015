@@ -195,7 +195,7 @@ setCityXAxisArray(int city){
 readCitys(){
 	char buf[1024];
 	int lineCount = 0;
-	FILE *file=fopen("/home/oneal/pvm3/bin/LINUX/TSPData.csv","r");
+	FILE *file=fopen("TSPData.csv","r");
 
 	if(!file){
 		printf("Cannot open file.\n");

@@ -32,9 +32,10 @@
 #include <string.h>
 #define SLAVENAME "slave1"
 //#include<conio.h>
-int a[10][10],visited[10],n,cost=0;
+int a[25][25],visited[25],n,cost=0;
 char citynames[25][50];
 int citys[25][25];
+#define BILLION  1000000000L;
 
 void get()
 {	
@@ -42,7 +43,7 @@ void get()
 	int i,j;
 	//printf("Enter No. of Cities: ");
 	//scanf("%d",&n);
-	n = 3;
+	n = 25;
 	printf("No. of Cities travelling salesman program is %d: ",n);
 	//printf("\nEnter Cost Matrix\n");
 	printf("\nRandomizing Cost Matrix\n");
@@ -107,12 +108,30 @@ void put()
 
 void main()
 {
+	
+
+	// Calculate time taken by a request
+	struct timespec requestStart, requestEnd;
+	clock_gettime(CLOCK_REALTIME, &requestStart);
+	
+
+
+    	
 	readCitys();
 	//clrscr();
 	get();
 	printf("\n\nThe Path is:\n\n");
 	mincost(0);
 	put();
+	
+
+	clock_gettime(CLOCK_REALTIME, &requestEnd);
+
+	// Calculate time it took
+	long accum = ( requestEnd.tv_nsec - requestStart.tv_nsec );
+	printf( "\n%ld\n", accum );
+	printf( "\nStart: %ld\n", requestStart.tv_nsec );
+	printf( "\nEnd: %ld\n", requestEnd.tv_nsec );
 	//getch();
 }
 
