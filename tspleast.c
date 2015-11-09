@@ -162,7 +162,7 @@ int least()
 	int cityFromSlave = 0;
 	if(nc != 999){
 		costFromSlave = kmin;
-		cityFromSlave = nc + 1;
+		cityFromSlave = nc;
 	}else{costFromSlave =cityXaxis[0];cityFromSlave=1;}
 	//printf("\nCost %d being returned for city %d with city index of %d\n",costFromSlave,cityFromSlave,cityIndex);
 	pvm_pkint(&costFromSlave,1,1);

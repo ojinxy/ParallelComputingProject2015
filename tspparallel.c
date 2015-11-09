@@ -156,7 +156,7 @@ void main()
 		if(i != (AMOUNTOFCITYS -1)){
 		printf("%s-->",citynames[cityFromSlave]);
 		}else{printf("%s",citynames[0]);}
-		cost += costFromSlave;
+		cost = cost + costFromSlave;
 	}
 
 	put();
