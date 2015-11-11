@@ -1,11 +1,28 @@
 /*
-	C Program for Travelling Salesman Problem using Dynamic Method
-	Author: PracsPedia		www.pracspedia.com
-*/
-/*
-* If we are able to split this work amoungest the amout of processors the the work should be faster. The least value can be
-*broadcast to the master node to maintain the minimum value. When one city has finished the next city can be processed and parallize the least function
-*again.
+
+	Author:     			Oneal Anguin <onealanguin@gmail.com>,
+	Supported by:   		Delano Gaskin <delanogaskin@gmail.com>
+					Andre Graham <graham.andre.t@gmail.com>,
+					Imam Idris <imamidris01@gmail.com>
+
+	Lecturer:    	Dr Simon U Ewedafe
+
+	Program:    	tspparallel.c
+
+	Code Repository: http://github.com/ojinxy/ParallelComputingProject2015
+
+	Description:    Master program for implementation of Travelling Salesman in C using PVM
+
+	Adopted/
+	Extended from:  http://www.pracspedia.com/AOA/tsp.html
+
+	Influence on    The C implementation of the Traveling Salesman Problem was parallelized
+	work:
+
+	Given an assignment to implement Travelling Salesman algorithm for matrix multiplication, the first step was to obtain such an algorithm.
+	The next phase was to convert the algorithm to its implementation platform PVM/C.
+	The dependancy of the child nodes needing to know what the last selected least value was forced the Master to pass information recieved from
+	childred to other children.
 */
 #include<stdio.h>
 #include<stdlib.h>
@@ -24,34 +41,7 @@ int a[AMOUNTOFCITYS][AMOUNTOFCITYS],visited[AMOUNTOFCITYS],n,cost=0,city=0,cityX
 	lastVisited,cityIndex,lastVisitedNodes[AMOUNTOFCITYS];
 char citynames[25][50];
 
-void get()
-{	
-	
-	int i,j;
-	n = AMOUNTOFCITYS;
-	nproc = AMOUNTOFCITYS;
-	printf("No. of Cities travelling salesman program is %d: ",n);
-
-	printf("\nRandomizing Cost Matrix\n");
-	for( i=0;i < n;i++)
-	{
-		//printf("\nEnter Elements of Row # : %d\n",i+1);
-		/*Code added by OA 23 Oct 2015 - Use random numbers to generate distance between points.*/
-		for( j=0;j < n;j++)
-			a[i][j] = randInRange(1, 100) + i + j;
-			//scanf("%d",&a[i][j]);
-		visited[i]=0;
-	}
-	printf("\n\nThe cost list is:\n\n");
-	for( i=0;i < n;i++)
-	{
-		printf("\n\n");
-		for(j=0;j < n;j++)
-			printf("\t%d",a[i][j]);
-	}
-}
-
-
+/*Print out the total cost.*/
 void put()
 {
 	printf("\n\nMinimum cost:");
@@ -60,12 +50,10 @@ void put()
 
 void main()
 {
-	//printf("I'm t%x\n", pvm_mytid());
-	
-	
+
 	int tid,cc;                 /* my task id */
 	int tids[AMOUNTOFCITYS];   /* slave task ids */
-    	//tid = pvm_mytid();	  /* enroll in pvm */
+    	tid = pvm_mytid();	  /* enroll in pvm */
 	int nhost, narch;
 	char buf[100];
 
@@ -78,7 +66,6 @@ void main()
     	
 	cc = pvm_spawn(LEAST, (char**)0, 0, "", AMOUNTOFCITYS, tids);
 	
-	//get();
 	readCitys();
 	printf("\n\nThe Path is:\n\n");
 
@@ -89,6 +76,8 @@ void main()
 		city = i;
 		cityIndex = i;
 		if(i != 0){
+			/*After the first city has been found its value has to be collected and passed to subsequent children
+			  this needs to be done in order for the same values not to be selected.*/
 			pvm_recv(tids[i -1],VISITEDNODES);
 			pvm_upkint(visited,AMOUNTOFCITYS,1);
 			pvm_upkint(&lastVisited,1,1);
@@ -101,27 +90,14 @@ void main()
 
 		setCityYAxisArray(city);
 		setCityXAxisArray(city);		
-
-		//printf("\nValue of city in the parent is %d\n",city);
 	
 		pvm_initsend(PvmDataDefault);
 
 		pvm_pkint(cityYaxis,AMOUNTOFCITYS , 1);
-		/*int x = 0;
-		printf("City Y Axis in parent consists of  : ");
-		for(x; x < AMOUNTOFCITYS; x++){printf("%d-->",cityYaxis[x]);}
-		printf("\n");*/
+
 		pvm_pkint(cityXaxis,AMOUNTOFCITYS , 1);
-		/*printf("City X Axis in parent consists of  : ");
-		int xIndex = 0;
-		for(xIndex; xIndex < AMOUNTOFCITYS; xIndex++){printf("%d-->",cityXaxis[xIndex]);}
-		printf("\n");*/
 
 		pvm_pkint(cityYaxisFirstCity,AMOUNTOFCITYS , 1);
-		/*printf("First City Y Axis in parent consists of  : ");
-		int xFIndex = 0;
-		for(xFIndex; xFIndex < AMOUNTOFCITYS; xFIndex++){printf("%d-->",cityYaxisFirstCity[xFIndex]);}
-		printf("\n");*/
 
 		pvm_pkint(&city,1 , 1);
 
@@ -136,6 +112,7 @@ void main()
 
 		
 		if(i != 0){
+			/*Pass values to children nodes to be used to prevent duplicates.*/
 			pvm_initsend(PvmDataDefault);
 			pvm_pkint(visited,AMOUNTOFCITYS,1);
 			pvm_send(tids[i],VISITEDNODES);
@@ -163,16 +140,7 @@ void main()
 	pvm_exit();
 }
 
-
-
-int randInRange(int min, int max)
-{
-  srand(rand());
-  int returnValue = min + (int) (rand() / (double) (RAND_MAX -1) * (max - min + 1));
-  srand (returnValue + time(NULL));
-  return returnValue;
-}
-
+/*Get Y axis for City*/
 setCityYAxisArray(int city){
   int indexYAxis = 0;
   for(indexYAxis; indexYAxis < AMOUNTOFCITYS; indexYAxis++){
@@ -184,6 +152,7 @@ setCityYAxisArray(int city){
   
 }
 
+/*Get X axis for City*/
 setCityXAxisArray(int city){
   int i = 0;
   for(i; i < AMOUNTOFCITYS; i++){
@@ -192,6 +161,7 @@ setCityXAxisArray(int city){
 }
 
 
+/*Read City Values for CSV file (TSPData.csv). This file needs to be stored in the users home directory. */
 readCitys(){
 	char buf[1024];
 	int lineCount = 0;
@@ -225,9 +195,6 @@ readCitys(){
 	
 	}
 
-	//printf("The 23rd city is %d\n",citys[0][11]);
-
-	//printf("The 23rd city name is %s\n",citynames[0]);
 	int i,j;
 	printf("\n\nThe cost list is:\n\n");
 	for( i=0;i < AMOUNTOFCITYS;i++)
@@ -238,41 +205,4 @@ readCitys(){
 	}
 }
 
-/*
-
-OUTPUT:
-Enter No. of Cities: 4
-Enter Cost Matrix
-Enter Elements of Row # : 1
-1
-5
-4
-2
-Enter Elements of Row # : 2
-2
-1
-5
-4
-Enter Elements of Row # : 3
-9
-6
-2
-4
-Enter Elements of Row # : 4
-7
-5
-3
-4
-The cost list is:
-	1	5	4	2
-
-	2	1	5	4
-
-	9	6	2	4
-
-	7	5	3	4
-
-The Path is:
-
-1 –->4 -–>3 -–>2 -–>1
-*/
+/*******************************End of Program************************************************/
