@@ -1,8 +1,29 @@
+/*
 
-static char rcsid[] =
-	"$Id: hello_other.c,v 1.3 2009/01/23 01:12:48 pvmsrc Exp $";
+	Author:     			Oneal Anguin <onealanguin@gmail.com>,
+	Supported by:   		Delano Gaskin <delanogaskin@gmail.com>
+					Andre Graham <graham.andre.t@gmail.com>,
+					Imam Idris <imamidris01@gmail.com>
 
+	Lecturer:    	Dr Simon U Ewedafe
 
+	Program:    	tspserial.c
+	
+	Code Repository: http://github.com/ojinxy/ParallelComputingProject2015
+
+	Description:    Master program for implementation of Travelling Salesman in C using PVM
+
+	Adopted/
+	Extended from:  http://www.pracspedia.com/AOA/tsp.html
+
+	Influence on    The C implementation of the Traveling Salesman Problem was parallelized
+	work:
+
+	Given an assignment to implement Travelling Salesman algorithm for matrix multiplication, the first step was to obtain such an algorithm.
+	The next phase was to convert the algorithm to its implementation platform PVM/C.
+	The dependancy of the child nodes needing to know what the last selected least value was forced the Master to pass information recieved from
+	childred to other children.
+*/
 
 #include <stdio.h>
 #ifdef HASSTDLIB
@@ -19,7 +40,6 @@ static char rcsid[] =
 #define MSGTYPEFROMSLAVE 56
 #define VISITEDNODES 57
 
-//int AMOUNTOFCITYS = 3;
 int visited[AMOUNTOFCITYS],cost=0,cityYaxis[AMOUNTOFCITYS],cityYaxisFirstCity[AMOUNTOFCITYS],cityXaxis[AMOUNTOFCITYS],city=0,
 	solution[AMOUNTOFCITYS],parentTid,tids[AMOUNTOFCITYS],lastVisited,cityIndex,lastVisitedNodes[AMOUNTOFCITYS];
 
@@ -27,49 +47,24 @@ main()
 {
 	printf("Starting Main TSP Least");
 	
-	
 
 	int i,ncity;
 	int visited[25];
 	int mytid = pvm_mytid();       /* my task id */
 	parentTid = pvm_parent();
 	
+	/*Recieve Data from master*/
 	pvm_recv(parentTid,MSGTYPE);
 	pvm_upkint(cityYaxis,AMOUNTOFCITYS,1);
-	/*printf("City X Axis in child consists of  : ");
-	int xIndex = 0;
-	for(xIndex; xIndex < AMOUNTOFCITYS; xIndex++){printf("%d-->",cityXaxis[xIndex]);}
-	printf("\n");*/
 	pvm_upkint(cityXaxis,AMOUNTOFCITYS,1);
-	/*int x = 0;
-	printf("City Y Axis in child consists of  : ");
-	for(x; x < AMOUNTOFCITYS; x++){printf("%d-->",cityYaxis[x]);}
-	printf("\n");*/
+
 	pvm_upkint(cityYaxisFirstCity,AMOUNTOFCITYS,1);
-	/*printf("First City Y Axis in child consists of  : ");
-	int xFIndex = 0;
-	for(xFIndex; xFIndex < AMOUNTOFCITYS; xFIndex++){printf("%d-->",cityYaxisFirstCity[xFIndex]);}
-	printf("\n");*/	
 
 	pvm_upkint(&city,1,1);
 
 	pvm_upkint(&lastVisited,1,1);
 	pvm_upkint(lastVisitedNodes,AMOUNTOFCITYS,1);
 	pvm_upkint(&cityIndex,1,1);
-
-	int m = 0;
-	/*printf("\nThe visited nodes are : ");
-	for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,lastVisitedNodes[m] );}
-	printf("\n");*/
-	//printf("\nThe last visited node from child is %d\n",lastVisited);
-
-	//int z = 0;
-	/*printf("\nThe nodes being processed in child main function are : ");
-	for(z; z < AMOUNTOFCITYS; z ++){printf("%d --> %d |",z,processing[z] );}
-	printf("\n");*/
-	
-
-	//printf("\nThe city being processed is %d\n", city);
 
 	mincost(city);
 	pvm_exit();
@@ -82,35 +77,25 @@ mincost(int city)
     	int i,ncity;
 
 	if(city != 0){
-		//printf("Unpacking Visited citys!\n");
+		/*If this is not the first city get the last selected city from the master*/
 		pvm_recv(parentTid,VISITEDNODES);
 		pvm_upkint(visited,AMOUNTOFCITYS,1);
 
 	}
 		
 	visited[city]=1;
-	int m = 0;
-	//printf("The visited nodes for child are ");
-	//for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,visited[m] );}
-	printf("\n");
-	//printf("The city is : %d",city+1);
-	//printf("Processing City");
-	//printf("The cost is %d\n", cost);
-	//printf("%d -->",city+1);
+
 	solution[city] = city + 1;
 	ncity=least(city);
-	//printf("\nThe least city is %d\n",ncity);
 	
 	
 	if(ncity==999)
 	{
 		ncity=0;
-		//printf("finished");
 		cost+= cityYaxis[ncity];
-		//return;
 	}
-	//mincost(ncity);
 	
+	/*Send the last visted and the visited citys to the master*/
 	lastVisited = ncity;
 	lastVisitedNodes[lastVisited] = 1;
 	pvm_initsend(PvmDataDefault);
@@ -122,30 +107,22 @@ mincost(int city)
 
 }
 
+/*The least function will get the city the the lowest cost which has not yet been selected for the city X Axis*/
 int least()
 {
 	int i,nc=999;
 	int min=999,kmin;
 
-	/*for(i=0;i < n;i++)
-	{
-		if((a[c][i]!=0)&&(visited[i]==0))
-			if(a[c][i] < min)
-			{
-				min=a[i][0]+a[c][i];
-				kmin=a[c][i];
-				nc=i;
-			}
-	}*/
+
 	for(i=0;i < AMOUNTOFCITYS;i++)
 	{
-		//printf("City at y axis %d",cityYaxis[i]);
+		
 		if((cityXaxis[i]!=0)&&(checkIfCanidateForSelection(i) == 1))
 		{
 			
 			if(cityXaxis[i] < min)
 			{
-				//min=cityYaxisFirstCity[i]+cityXaxis[i];
+
 				min=cityXaxis[i];
 				if(cityIndex < (AMOUNTOFCITYS -1)){
 					kmin=cityXaxis[i];
@@ -164,7 +141,8 @@ int least()
 		costFromSlave = kmin;
 		cityFromSlave = nc;
 	}else{costFromSlave =cityXaxis[0];cityFromSlave=1;}
-	//printf("\nCost %d being returned for city %d with city index of %d\n",costFromSlave,cityFromSlave,cityIndex);
+	
+	/*Send selected city and cost to the master*/
 	pvm_pkint(&costFromSlave,1,1);
 	pvm_pkint(&cityFromSlave,1,1);
 	pvm_send(parentTid,MSGTYPEFROMSLAVE);
@@ -174,11 +152,6 @@ int least()
 
 int checkIfCanidateForSelection(int i){
 	int candidate = 0;
-	/*printf("\nCity being processed %d\n",city);
-	printf("Checking if City %d is a candidate for selection.\n",i);
-	printf("Last visited is %d.\n",lastVisited);
-	printf("Visted is %d\n",visited[i]);
-	printf("Processing is %d\n",processing[i]);*/
 
 
 	if(visited[i] == 0 && city != i){
@@ -187,12 +160,5 @@ int checkIfCanidateForSelection(int i){
 		candidate = 1;
 	}
 
-	/*int m = 0;
-	printf("\nThe nodes being processed in child are : ");
-	for(m; m < AMOUNTOFCITYS; m ++){printf("%d --> %d |",m,processing[m] );}
-	printf("\n");*/
-	
-	/*printf("\nThe city{%d} for index i {%d} had candidate value of {%d}\n",city,i,candidate);*/
-	//printf("Candidate for Selection %d\n",candidate);
 	return candidate;
 }
